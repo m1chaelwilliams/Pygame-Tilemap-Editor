@@ -261,6 +261,10 @@ while True:
         layerSpacingy += 100
 
     surface.fill(grass_green)
+    for x in range(width):
+        py.draw.line(surface, (255,255,255), (x*100, 0), (x*100, height*100), 1)
+    for x in range(height):
+        py.draw.line(surface, (255,255,255), (0,x*100), (width*100,x*100), 1)
 
     draw_rects(bg_blocks)
     draw_rects(layout_blocks)
