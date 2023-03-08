@@ -1,38 +1,31 @@
 import pygame as py
 import blocks
+import tilemapfileopen
+
 
 py.init()
 screen = py.display.set_mode((1000,1000))
 surface = py.Surface((2000,2000))
 clock = py.time.Clock()
 
-def open_file(filename, layer):
-    with open(filename, 'r') as f:
-        count = 0
-        i = 0
-        while i < 1:
-            if f.readline() != "":
-                count += 1
-            else:
-                i += 1
 
-        f.seek(0)
-        global test
-        for x in range(count):
-            line = f.readline().rstrip("\n")
-            rect_line = line[:-2].split(",")
-            int_line = map(int, rect_line)
-            newline= tuple(int_line)
-            value = int(line[-1:])
-            sprite = (py.Rect(newline), value)
-            layer.append(sprite)
 
 
             
 def draw_rects(tilemap):
     for j in tilemap:
-        
-        surface.blit(blocks.blocks[j[1]], j[0])     
+        if type(blocks.blocks[j[1]]) == list:
+            pass     
+        else:
+            surface.blit(blocks.blocks[j[1]], j[0])     
+
+def draw_animated_rects(tilemap):
+    for i in tilemap:
+        if i[1] == 4:
+            surface.blit(blocks.blocks[i[1]][coin_anim.frame_count], i[0])     
+        elif i[1] == 5:
+            surface.blit(blocks.blocks[i[1]][flower_anim.frame_count], i[0])     
+
 
 def collision_test(rect, tiles):
     hit_list = []
@@ -63,14 +56,27 @@ def move(rect, player_movement, tiles):
             collision_types['top'] = True
     return rect, collision_types
 
+# BLOCK LISTS WITH INDEXES
+
+# 0 - TREE
+# 1 - ROCK
+# 2 - PATH
+# 3 - WATER
+# 4 - COIN
+
 layer0 = [
 
 ]
 layer1 = [
 
 ]
-open_file("layer0.txt", layer0)
-open_file("layer1.txt", layer1)
+layer2 = [
+
+]
+
+layer0 = tilemapfileopen.open_file("layer0.txt")
+layer1 = tilemapfileopen.open_file("layer1.txt")
+layer2 = tilemapfileopen.open_file("layer2.txt")
 
 up = False
 down = False
@@ -81,32 +87,63 @@ player_movement = [0,0]
 
 movement = [0,0]
 
-player = py.transform.scale(py.image.load('square.png').convert(), (50,50))
+player = py.transform.scale(py.image.load('square2.jpeg').convert(), (50,50))
 p_rect = player.get_rect(center = (500,500))
 
 map_pos = [0,0]
 
+# ---ANIMATIONS---
+
+class animation:
+    amt_frames = 0
+    frame_speed = 0
+    frame_count = 0
+    count = 0
+    def __init__(self, frame_speed, frame_count, amt_frames) -> None:
+        self.frame_speed = frame_speed
+        self.frame_count = frame_count
+        self.amt_frames = amt_frames-1
+    
+    def update(self):
+        self.count += 1
+        if self.count == self.frame_speed:
+            self.count = 0
+            if self.frame_count < self.amt_frames:
+                self.frame_count += 1
+            else:
+                self.frame_count = 0
+        print(self.frame_count)
+
+coin_anim = animation(10,0,4)
+flower_anim = animation(20,0,2)
+
 while True:
+
+
+    
+
     screen.fill('black')
     surface.fill(py.Color("#9aad55"))
     if right:
-        movement[0] = -10
-        player_movement[0] = 10
+        movement[0] = -5
+        player_movement[0] = 5
     elif left:
-        movement[0] = +10
-        player_movement[0] = -10
+        movement[0] = +5
+        player_movement[0] = -5
     else:
         movement[0] = 0
         player_movement[0] = 0
     if up:
-        movement[1] = +10
-        player_movement[1] = -10
+        movement[1] = +5
+        player_movement[1] = -5
     elif down:
-        movement[1] = -10
-        player_movement[1] = 10
+        movement[1] = -5
+        player_movement[1] = 5
     else:
         movement[1] = 0
         player_movement[1] = 0
+    
+
     for event in py.event.get():
         if event.type == py.QUIT:
             py.quit()
@@ -141,14 +178,25 @@ while True:
     if collisions['bottom']:
         movement[1] = 0
 
+    draw_rects(layer2)
     draw_rects(layer1)
     draw_rects(layer0)
+    draw_animated_rects(layer2)
+    draw_animated_rects(layer1)
+    draw_animated_rects(layer0)
+
+    for x in layer1:
+        if p_rect.colliderect(x[0]) and x[1] == 4:
+            layer1.remove(x)
     
     surface.blit(player, p_rect)
 
     map_pos[0] += movement[0]
     map_pos[1] += movement[1]
     screen.blit(surface, tuple(map_pos))
+
+    coin_anim.update()
+    flower_anim.update()
 
     py.display.update()
     clock.tick(60)
